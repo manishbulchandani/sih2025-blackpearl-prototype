@@ -17,12 +17,6 @@ const ASVProcessingStep: React.FC<ASVProcessingStepProps> = ({ step, progress })
     error_rate: Math.max(0.001, 0.01 * Math.exp(-i / 5) + Math.random() * 0.002)
   }));
 
-  // Generate ASV abundance scatter data
-  const asvData = Array.from({ length: Math.floor(progress * 2) }, (_, i) => ({
-    length: 200 + Math.random() * 200,
-    abundance: Math.log10(Math.random() * 10000 + 1),
-    asv_id: i + 1
-  }));
 
   const processingStats = [
     { label: 'Input Sequences', value: '987,654', status: progress > 5 },
