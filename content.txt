@@ -1,0 +1,148 @@
+B — Plain-language walk-through of each step, what it does, and the important tools
+
+I’ll go step-by-step: short plain language explanation, why it’s needed, typical tools, and one-line advice.
+
+Step 0 — Download raw reads (SRA / ENA)
+
+What it does: gets the raw sequencing files (FASTQ) from public archives so you can process them locally or in the cloud.
+Why: you need the actual reads to run the pipeline.
+Tools: SRA Toolkit (prefetch + fasterq-dump), ENA downloader, or directly from cloud public buckets.
+Advice: test on 1–3 runs first; use cloud compute/storage for many/large runs.
+
+Step 1 — Demultiplexing (if needed)
+
+Plain: split samples if the sequencer put many samples into one file using barcodes.
+Why: per-sample analysis is needed for biodiversity summaries.
+Tools: cutadapt (barcode-based splitting), Illumina bcl2fastq if starting from raw BCL.
+Advice: many SRA runs are already per-sample — check metadata.
+
+Step 2 — Quality control & adapter/primer trimming
+
+Plain: remove sequencing artifacts and bad bases so downstream inference is accurate.
+Why: leftover adapters/poor bases cause errors and false unique sequences.
+Tools: fastp (fast all-in-one) and cutadapt for exact primer trimming.
+Advice: keep the QC html report (judges like visuals).
+
+Step 3 — Merge paired reads (amplicon-specific) — optional
+
+Plain: if the two paired reads overlap, merge them into the full amplicon sequence.
+Why: full-length amplicon often has better taxonomic signal.
+Tools: vsearch, BBMerge, or DADA2’s internal merging.
+Advice: if your marker is short and overlaps, merge; if shotgun/long-reads, skip.
+
+Step 4 — Denoising / ASV inference (DADA2)
+
+Plain: transforms raw reads into ASVs — the “clean” distinct DNA sequences present in the sample (one nucleotide resolution).
+Why: removes most sequencing errors so you’re working with real biological sequences, not errors.
+Tool: DADA2 (R) — gold-standard for amplicon denoising.
+Outputs you’ll use later: rep-seqs.fasta (ASV sequences) and seqtab.csv (counts per ASV per sample).
+Advice: this step is essential — treat ASVs as your canonical units for downstream analysis. 
+PubMed
+
+Step 5 — Baseline taxonomic assignment (reference-based)
+
+Plain: for each ASV, try to find the closest known sequence in reference databases (like SILVA, PR^2, BOLD, GenBank).
+Why: when a close match exists, you can give a taxonomic name (species/genus). But deep-sea taxa are often missing.
+Fast tools: MMseqs2 (fast, scalable), DIAMOND (for translated searches), blastn (standard but slow).
+Advice: use marker-specific and curated marine reference subsets (smaller + more relevant), not full nt. MMseqs2 is excellent for speed and large references. 
+Oxford Academic
+PubMed
+
+Step 6 — Embedding-based, reference-free classification (novelty detection)
+
+Plain: convert DNA sequences into numeric vectors (embeddings) using pretrained sequence language models; compare vectors to find relatives even if no exact database match exists. This helps find novel but related sequences.
+Why: avoids over-reliance on incomplete reference databases — you can detect clusters of similar unknown sequences that are likely new taxa.
+Tools: DNABERT / DNABERT-2 / DNABERT-S (pretrained sequence transformer models) to get embeddings; FAISS to index/search embeddings quickly.
+Advice: this is a core AI part of your proposal. DNABERT-family methods have been shown to produce species-aware embeddings that help clustering and novelty detection; use GPU for speed if available, and tune a distance threshold with known data. 
+PMC
+
+Step 7 — Clustering & novelty triage
+
+Plain: group the unassigned ASVs into clusters of similar sequences so biologists can inspect clusters instead of thousands of singletons. Rank clusters by evidence (cluster size, read counts, geographic spread).
+Why: prioritize what’s most likely to be an actual novel taxon (many reads in many samples) vs. sequencing noise.
+Tools: HDBSCAN (density based), UMAP for visualization, scikit-learn for other clustering.
+Advice: present top-ranked candidate clusters (with consensus sequences and read-support) — this is what domain experts will follow up with lab work.
+
+Step 8 — Phylogenetic placement (high-value optional)
+
+Plain: place ASVs onto a known backbone tree to infer where they belong in the tree of life (e.g., near which phyla/orders).
+Why: even without a database species match, a placement can tell you “this unknown sits inside Cnidaria-like clade” which is useful for ecological inference.
+Tools: aligner MAFFT, tree builders IQ-TREE / RAxML, placement tools EPA-ng or pplacer.
+Advice: this is computationally heavier but gives stronger taxonomic inferences for top candidates. 
+Oxford Academic
+
+Step 9 — Abundance estimation & compositional analysis
+
+Plain: build per-sample reports (which ASVs/taxa are present and their relative abundances), and compute diversity metrics (alpha & beta diversity).
+Why: core biodiversity outputs (species counts, diversity indices, ordination plots).
+Tools: QIIME2, vegan (R), scikit-bio, pandas.
+Advice: always state that abundance from amplicons is relative and biased (PCR, primer bias, copy number). Provide normalized measures and caution.
+
+Step 10 — Dashboard & deliverables
+
+Plain: a UI to show QC, ASV tables, taxonomy assignments, novelty clusters, maps of sampling locations, and downloads.
+Why: judges and scientists need readable outputs.
+Tools: Streamlit or Dash for a lightweight web app; package with Docker + Nextflow/Snakemake pipeline and example runs.
+Advice: include a small test run (3–6 SRA samples) in submission so reviewers can run/review your pipeline quickly.
+
+
+
+
+C — Improvements and practical suggestions (how to make this top-tier for SIH)
+
+Use a hybrid taxonomy strategy: baseline MMseqs2 (fast exact/similarity), then embeddings (DNABERT-family) → if both weak, run phylogenetic placement. This reduces false positives and gives graded confidence (exact match → high; embedding close → medium; only placement → low). 
+Oxford Academic
+PMC
+
+Curate a marine/deep-sea reference subset: download GenBank/RefSeq sequences labeled as marine/deep-sea (or taxa known from deep sea), cluster them (MMseqs2 cluster) and keep centroids as a compact, targeted DB. This increases relevant hits and lowers compute.
+
+Benchmark with mock communities and negatives: create synthetic mixes (or use published mock datasets) to calibrate sensitivity, precision, and embedding distance thresholds.
+
+Quantify uncertainty: provide confidence scores per assignment (percent identity, embedding distance percentiles, placement likelihood). Present taxonomy at the highest safe rank (e.g., family-level) if species-level confidence is low.
+
+Reproducibility & deployment: wrap the pipeline in Nextflow/Snakemake + Docker/Singularity images; add a small test dataset so reviewers can reproduce results in minutes.
+
+Compute plan: embeddings are faster on GPU; provide two modes — “light” (CPU only, smaller DB) for quick runs and “full” (GPU + full steps) for deeper discovery.
+
+Biological follow-up plan: for top novel clusters, suggest wet-lab validation steps (targeted PCR, longer marker sequencing, specimen collection if possible) — judges like an action plan.
+
+D — Short reading list (papers/tools + links) — start here
+
+Below are concise, high-value resources aligned with the pipeline and methods. I included one-sentence reason for each.
+
+DADA2 — the standard denoising method (how to get ASVs) — Callahan et al., 2016 (Nature Methods). Good for understanding ASV inference. 
+PubMed
+
+Link: https://pubmed.ncbi.nlm.nih.gov/27214047/
+
+MMseqs2 — fast sequence search & clustering (fast alternative to BLAST for large DBs). Useful for fast taxonomic assignment and DB clustering. 
+Oxford Academic
+
+Link: https://github.com/soedinglab/mmseqs2
+
+DNABERT-S (and DNABERT family) — embedding-based, species-aware sequence embeddings — relevant for embedding + novelty detection. Read the DNABERT-S preprint/paper and code. 
+PMC
+arXiv
+
+Link (PMC / arXiv): https://pmc.ncbi.nlm.nih.gov/articles/PMC10896361/
+ and https://arxiv.org/abs/2402.08777
+
+EPA-ng (phylogenetic placement) — method for placing short queries into a backbone tree to infer taxonomic context. Useful for unassigned ASVs. 
+Oxford Academic
+
+Link: https://github.com/pbarbera/epa-ng
+ and the paper in Systematic Biology.
+
+eDNA + deep-sea biodiversity reviews — use these to frame the project and justify the problem (deep-sea taxa under-represented in references). Example: a Frontiers paper on eDNA for deep-sea hard substrata. 
+Frontiers
+ScienceDirect
+
+Link: https://www.frontiersin.org/articles/10.3389/fmars.2019.00783/full
+
+Taxonomy-free ML on eDNA — examples showing ML can infer ecological classes without exact taxonomy (good background reading). 
+Wiley Online Library
+
+MMseqs2 taxonomy & benchmarking — paper describing MMseqs2 for taxonomic assignment and metagenomics. 
+PubMed
+
+(If you want, I can fetch and summarize any of these papers line-by-line and pull out methods/figures you can cite in your SIH write-up.)
