@@ -1,276 +1,195 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ChevronRight, 
-  ChevronDown, 
-  Folder, 
-  FolderOpen, 
-  File, 
+import {
+  FileText,
   Play,
-  Calendar,
-  MapPin,
+  Activity,
+  Download,
   Layers,
-  HardDrive,
-  Info,
-  Cpu
+  BookOpen,
+  Database
 } from 'lucide-react';
 import { mockDatasets, type Dataset } from '../data/mockData';
 
+const formatNumber = (value: number | undefined) => {
+  if (value === undefined) return '—';
+  return new Intl.NumberFormat('en-US').format(value);
+};
+
 const DatabaseBrowser = () => {
   const navigate = useNavigate();
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['mariana-expedition-2024']));
-  const [selectedDataset, setSelectedDataset] = useState<Dataset | null>(null);
+  const [selectedDataset, setSelectedDataset] = useState<Dataset | null>(mockDatasets[0] ?? null);
 
-  const toggleNode = (nodeId: string) => {
-    const newExpanded = new Set(expandedNodes);
-    if (newExpanded.has(nodeId)) {
-      newExpanded.delete(nodeId);
-    } else {
-      newExpanded.add(nodeId);
-    }
-    setExpandedNodes(newExpanded);
-  };
+  if (!mockDatasets.length) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center text-gray-500">
+        No dataset available.
+      </div>
+    );
+  }
 
-  const selectDataset = (dataset: Dataset) => {
-    setSelectedDataset(dataset);
-  };
-
-  const runAnalysis = (dataset: Dataset) => {
-    // Store selected dataset for pipeline
-    localStorage.setItem('currentDataset', JSON.stringify(dataset));
-    navigate(`/pipeline/${dataset.id}`);
-  };
-
-  const renderTree = (datasets: Dataset[], level: number = 0) => {
-    return datasets.map((dataset) => {
-      const isExpanded = expandedNodes.has(dataset.id);
-      const hasChildren = dataset.children && dataset.children.length > 0;
-      const isSelected = selectedDataset?.id === dataset.id;
-
-      return (
-        <motion.div
-          key={dataset.id}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: level * 0.1 }}
-        >
-          <div
-            className={`flex items-center space-x-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors ${
-              isSelected ? 'bg-blue-50 border border-blue-200' : ''
-            }`}
-            style={{ paddingLeft: `${12 + level * 20}px` }}
-            onClick={() => selectDataset(dataset)}
-          >
-            {hasChildren && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleNode(dataset.id);
-                }}
-                className="p-1 hover:bg-gray-200 rounded"
-              >
-                {isExpanded ? (
-                  <ChevronDown className="w-4 h-4 text-gray-600" />
-                ) : (
-                  <ChevronRight className="w-4 h-4 text-gray-600" />
-                )}
-              </button>
-            )}
-            
-            {!hasChildren && <div className="w-6" />}
-            
-            <div className="flex items-center space-x-2 flex-1 min-w-0">
-              {dataset.type === 'project' && <Folder className="w-5 h-5 text-blue-600 flex-shrink-0" />}
-              {dataset.type === 'expedition' && (
-                isExpanded ? 
-                <FolderOpen className="w-5 h-5 text-orange-600 flex-shrink-0" /> :
-                <Folder className="w-5 h-5 text-orange-600 flex-shrink-0" />
-              )}
-              {dataset.type === 'sample' && <File className="w-5 h-5 text-green-600 flex-shrink-0" />}
-              
-              <span className="font-medium text-gray-900 truncate">{dataset.name}</span>
-              
-              {dataset.size && (
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                  {dataset.size}
-                </span>
-              )}
-            </div>
-          </div>
-          
-          {hasChildren && isExpanded && (
-            <div className="mt-1">
-              {renderTree(dataset.children!, level + 1)}
-            </div>
-          )}
-        </motion.div>
-      );
-    });
+  const runAnalysis = (selected: Dataset) => {
+    localStorage.setItem('currentDataset', JSON.stringify(selected));
+    navigate(`/pipeline/${selected.id}`);
   };
 
   return (
-    <div className="h-screen bg-white flex">
-      {/* File Tree Panel */}
-      <div className="w-1/2 border-r border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-200">
+    <div className="min-h-screen bg-white flex">
+      <div className="w-2/5 border-r border-gray-200 flex flex-col bg-white">
+        <div className="p-8 border-b border-gray-200">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Dataset Browser</h1>
           <p className="text-gray-600">Browse and select eDNA sequencing datasets for analysis</p>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="space-y-1">
-            {renderTree(mockDatasets)}
-          </div>
+        <div className="flex-1 overflow-y-auto p-6">
+          {mockDatasets.map(dataset => {
+            const isSelected = selectedDataset?.id === dataset.id;
+            return (
+              <motion.button
+                key={dataset.id}
+                type="button"
+                whileHover={{ backgroundColor: 'rgba(59, 130, 246, 0.05)' }}
+                onClick={() => setSelectedDataset(dataset)}
+                className={`w-full text-left px-4 py-3 rounded-lg transition-all flex items-center space-x-3 ${
+                  isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
+                }`}
+              >
+                <FileText className={`w-5 h-5 flex-shrink-0 ${isSelected ? 'text-blue-600' : 'text-gray-400'}`} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">{dataset.name}</div>
+                  {dataset.stats && (
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      {dataset.stats.downloadSize}
+                    </div>
+                  )}
+                </div>
+              </motion.button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Details Panel */}
-      <div className="w-1/2 flex flex-col">
-        {selectedDataset ? (
-          <>
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-3">
-                    {selectedDataset.type === 'project' && <Folder className="w-6 h-6 text-blue-600" />}
-                    {selectedDataset.type === 'expedition' && <Folder className="w-6 h-6 text-orange-600" />}
-                    {selectedDataset.type === 'sample' && <File className="w-6 h-6 text-green-600" />}
-                    <h2 className="text-xl font-bold text-gray-900">{selectedDataset.name}</h2>
+      <div className="flex-1 flex flex-col">
+        <div className="p-8 border-b border-gray-200 bg-white">
+          <div className="flex items-start justify-between">
+            <div className="max-w-2xl">
+              {selectedDataset && (
+                <>
+                  <div className="text-sm font-mono text-blue-600 bg-blue-50 inline-flex px-3 py-1 rounded-full mb-3">
+                    {selectedDataset.id}
                   </div>
-                  
-                  <div className="text-sm text-gray-600 mb-4">
-                    <code className="bg-gray-100 px-2 py-1 rounded text-xs">{selectedDataset.path}</code>
-                  </div>
-                </div>
-                
-                {(selectedDataset.type === 'expedition' || selectedDataset.type === 'sample') && (
-                  <button
-                    onClick={() => runAnalysis(selectedDataset)}
-                    className="bg-gradient-to-r from-green-600 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-500 hover:to-blue-500 transition-all duration-300 flex items-center space-x-2 shadow-lg"
-                  >
-                    <Play className="w-5 h-5" />
-                    <span>Run Analysis</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6">
-              {/* Basic Info */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                {selectedDataset.size && (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <HardDrive className="w-5 h-5 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700">Size</span>
-                    </div>
-                    <div className="text-2xl font-bold text-gray-900">{selectedDataset.size}</div>
-                  </div>
-                )}
-                
-                {selectedDataset.fileCount && (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <File className="w-5 h-5 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700">Files</span>
-                    </div>
-                    <div className="text-2xl font-bold text-gray-900">{selectedDataset.fileCount}</div>
-                  </div>
-                )}
-              </div>
-
-              {/* Metadata */}
-              {selectedDataset.metadata && (
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <div className="flex items-center space-x-2 mb-4">
-                    <Info className="w-5 h-5 text-blue-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">Metadata</h3>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-3">
-                      <MapPin className="w-5 h-5 text-gray-500 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-medium text-gray-700">Location</div>
-                        <div className="text-gray-900">{selectedDataset.metadata.location}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3">
-                      <Layers className="w-5 h-5 text-gray-500 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-medium text-gray-700">Depth Range</div>
-                        <div className="text-gray-900">{selectedDataset.metadata.depth}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3">
-                      <Calendar className="w-5 h-5 text-gray-500 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-medium text-gray-700">Collection Date</div>
-                        <div className="text-gray-900">{selectedDataset.metadata.date}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3">
-                      <Cpu className="w-5 h-5 text-gray-500 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-medium text-gray-700">Sequencing Platform</div>
-                        <div className="text-gray-900">{selectedDataset.metadata.platform}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3">
-                      <Info className="w-5 h-5 text-gray-500 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-medium text-gray-700">Description</div>
-                        <div className="text-gray-900">{selectedDataset.metadata.description}</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Technical Specifications */}
-              {selectedDataset.type === 'sample' && (
-                <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-6">
-                  <div className="flex items-center space-x-2 mb-4">
-                    <Cpu className="w-5 h-5 text-blue-600" />
-                    <h3 className="text-lg font-semibold text-blue-900">Technical Specifications</h3>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div className="font-medium text-blue-700">Read Type</div>
-                      <div className="text-blue-900">Paired-end (2×150bp)</div>
-                    </div>
-                    <div>
-                      <div className="font-medium text-blue-700">Target Region</div>
-                      <div className="text-blue-900">16S rRNA V4</div>
-                    </div>
-                    <div>
-                      <div className="font-medium text-blue-700">Library Prep</div>
-                      <div className="text-blue-900">Nextera XT</div>
-                    </div>
-                    <div>
-                      <div className="font-medium text-blue-700">Quality Score</div>
-                      <div className="text-blue-900">Q30+ (&gt;90%)</div>
-                    </div>
-                  </div>
-                </div>
+                  <h2 className="text-3xl font-bold text-gray-900 leading-tight">{selectedDataset.name}</h2>
+                  {selectedDataset.summary && (
+                    <p className="text-base text-gray-600 mt-4 leading-relaxed">{selectedDataset.summary}</p>
+                  )}
+                </>
               )}
             </div>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center text-gray-500">
-              <Folder className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium mb-2">Select a Dataset</h3>
-              <p>Choose a dataset from the file tree to view details and run analysis</p>
-            </div>
+
+            <button
+              onClick={() => selectedDataset && runAnalysis(selectedDataset)}
+              className="bg-gradient-to-r from-blue-600 to-teal-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-500 hover:to-teal-400 transition-all duration-300 flex items-center space-x-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!selectedDataset}
+            >
+              <Play className="w-5 h-5" />
+              <span>Run Analysis</span>
+            </button>
           </div>
-        )}
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-8 bg-slate-50">
+          {selectedDataset?.stats && (
+            <div className="mb-8">
+              <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">Sequencing Snapshot</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <Activity className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase text-slate-500">Runs & Instrument</div>
+                      <div className="text-lg font-semibold text-slate-900">
+                        {selectedDataset.stats.runCount} run • {selectedDataset.stats.instrument}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-teal-50 rounded-lg">
+                      <Layers className="w-5 h-5 text-teal-600" />
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase text-slate-500">Spots</div>
+                      <div className="text-lg font-semibold text-slate-900">{formatNumber(selectedDataset.stats.spots)}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-indigo-50 rounded-lg">
+                      <Database className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase text-slate-500">Total Bases</div>
+                      <div className="text-lg font-semibold text-slate-900">{selectedDataset.stats.bases}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-emerald-50 rounded-lg">
+                      <Download className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase text-slate-500">Download Size</div>
+                      <div className="text-lg font-semibold text-slate-900">{selectedDataset.stats.downloadSize}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div className="flex items-center space-x-2 mb-5">
+              <BookOpen className="w-5 h-5 text-blue-600" />
+              <h3 className="text-lg font-semibold text-slate-900">Read Details</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-slate-700">
+              <div>
+                <div className="text-xs uppercase text-slate-500 mb-1">Type</div>
+                <div className="font-medium text-slate-900">{selectedDataset?.type ?? '—'}</div>
+              </div>
+              {selectedDataset?.stats?.instrument && (
+                <div>
+                  <div className="text-xs uppercase text-slate-500 mb-1">Instrument</div>
+                  <div>{selectedDataset.stats.instrument}</div>
+                </div>
+              )}
+              {selectedDataset?.metadata?.location && (
+                <div>
+                  <div className="text-xs uppercase text-slate-500 mb-1">Location</div>
+                  <div>{selectedDataset.metadata.location}</div>
+                </div>
+              )}
+              {selectedDataset?.design && (
+                <div>
+                  <div className="text-xs uppercase text-slate-500 mb-1">Design</div>
+                  <div>{selectedDataset.design}</div>
+                </div>
+              )}
+            </div>
+            {selectedDataset?.study && (
+              <div className="mt-6 text-sm text-slate-700">
+                <div className="text-xs uppercase text-slate-500 mb-1">Study</div>
+                <p className="leading-relaxed">{selectedDataset.study}</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

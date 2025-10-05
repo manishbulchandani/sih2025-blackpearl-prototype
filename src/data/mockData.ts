@@ -1,11 +1,12 @@
 import type { Sample } from '../types';
 
-// Dataset structure for directory-style browsing
+// Dataset structure tailored for single-read presentation
 export interface Dataset {
   id: string;
   name: string;
   type: 'project' | 'expedition' | 'sample';
-  path: string;
+  summary?: string;
+  path?: string;
   size?: string;
   fileCount?: number;
   samples?: Sample[];
@@ -17,143 +18,63 @@ export interface Dataset {
     platform: string;
     description: string;
   };
+  stats?: {
+    runCount: number;
+    instrument: string;
+    spots: number;
+    bases: string;
+    downloadSize: string;
+  };
+  design?: string;
+  submittedBy?: string;
+  study?: string;
+  projectAccessions?: string[];
+  sampleAccessions?: string[];
+  organism?: string;
+  library?: {
+    name: string;
+    instrument: string;
+    strategy: string;
+    source: string;
+    selection: string;
+    layout: string;
+  };
 }
 
 export const mockDatasets: Dataset[] = [
   {
-    id: 'mariana-expedition-2024',
-    name: 'Mariana Trench Deep Survey 2024',
-    type: 'project',
-    path: '/datasets/mariana-expedition-2024',
-    size: '2.8 TB',
-    fileCount: 45,
-    children: [
-      {
-        id: 'challenger-deep-samples',
-        name: 'Challenger Deep - Hadal Zone',
-        type: 'expedition',
-        path: '/datasets/mariana-expedition-2024/challenger-deep',
-        size: '1.2 TB',
-        fileCount: 18,
-        metadata: {
-          location: 'Challenger Deep, Mariana Trench',
-          depth: '10,000-11,000m',
-          date: 'March 2024',
-          platform: 'Illumina NovaSeq 6000',
-          description: 'Deep hadal zone eDNA sampling from the deepest part of Earth\'s oceans'
-        },
-        children: [
-          {
-            id: 'sample-MD24-001',
-            name: 'MD24-001_S1_L001_R1_001.fastq.gz',
-            type: 'sample',
-            path: '/datasets/mariana-expedition-2024/challenger-deep/MD24-001',
-            size: '1.2 GB',
-            metadata: {
-              location: '11.373°N, 142.591°E',
-              depth: '10,994m',
-              date: '2024-03-15',
-              platform: 'Illumina NovaSeq 6000',
-              description: '2.45M paired-end reads, 16S rRNA V4 region'
-            }
-          },
-          {
-            id: 'sample-MD24-002',
-            name: 'MD24-002_S2_L001_R1_001.fastq.gz',
-            type: 'sample',
-            path: '/datasets/mariana-expedition-2024/challenger-deep/MD24-002',
-            size: '1.1 GB',
-            metadata: {
-              location: '11.371°N, 142.593°E',
-              depth: '10,890m',
-              date: '2024-03-15',
-              platform: 'Illumina NovaSeq 6000',
-              description: '2.28M paired-end reads, 16S rRNA V4 region'
-            }
-          }
-        ]
-      },
-      {
-        id: 'sirena-deep-samples',
-        name: 'Sirena Deep - Abyssal Transition',
-        type: 'expedition',
-        path: '/datasets/mariana-expedition-2024/sirena-deep',
-        size: '0.9 TB',
-        fileCount: 12,
-        metadata: {
-          location: 'Sirena Deep, Mariana Trench',
-          depth: '8,000-9,000m',
-          date: 'March 2024',
-          platform: 'Illumina MiSeq',
-          description: 'Abyssal-hadal transition zone biodiversity survey'
-        }
-      }
-    ]
-  },
-  {
-    id: 'pacific-deep-survey-2024',
-    name: 'Pacific Deep Water Survey 2024',
-    type: 'project',
-    path: '/datasets/pacific-deep-survey-2024',
-    size: '4.1 TB',
-    fileCount: 67,
-    children: [
-      {
-        id: 'japan-trench',
-        name: 'Japan Trench Samples',
-        type: 'expedition',
-        path: '/datasets/pacific-deep-survey-2024/japan-trench',
-        size: '1.8 GB',
-        fileCount: 24,
-        metadata: {
-          location: 'Japan Trench, Northwest Pacific',
-          depth: '7,000-9,200m',
-          date: 'April 2024',
-          platform: 'Illumina NovaSeq 6000',
-          description: 'Seismically active trench biodiversity analysis'
-        }
-      },
-      {
-        id: 'kermadec-trench',
-        name: 'Kermadec Trench Samples',
-        type: 'expedition',
-        path: '/datasets/pacific-deep-survey-2024/kermadec-trench',
-        size: '1.4 GB',
-        fileCount: 19,
-        metadata: {
-          location: 'Kermadec Trench, Southwest Pacific',
-          depth: '8,000-10,047m',
-          date: 'January 2024',
-          platform: 'Illumina HiSeq 4000',
-          description: 'Southern hemisphere hadal zone comparative study'
-        }
-      }
-    ]
-  },
-  {
-    id: 'atlantic-ridge-survey',
-    name: 'Atlantic Ridge Biodiversity Survey',
-    type: 'project',
-    path: '/datasets/atlantic-ridge-survey',
-    size: '3.2 TB',
-    fileCount: 52,
-    children: [
-      {
-        id: 'puerto-rico-trench',
-        name: 'Puerto Rico Trench',
-        type: 'expedition',
-        path: '/datasets/atlantic-ridge-survey/puerto-rico-trench',
-        size: '1.1 TB',
-        fileCount: 15,
-        metadata: {
-          location: 'Puerto Rico Trench, North Atlantic',
-          depth: '6,000-8,648m',
-          date: 'February 2024',
-          platform: 'Illumina MiSeq',
-          description: 'Atlantic deep-water endemic species discovery'
-        }
-      }
-    ]
+    id: 'SRX25419065',
+    name: 'SRX25419065: amplicon seq. of 18S rRNA of surface sediment',
+    type: 'sample',
+    summary: '1 Illumina MiSeq run • 206,859 spots • 124.5M bases • 63.4 MB download',
+    metadata: {
+      location: 'Kattegat (surface sediment)',
+      depth: 'Surface sediment',
+      date: 'Not specified',
+      platform: 'Illumina MiSeq',
+      description: 'Amplicon sequencing read from chronic trawling impact study'
+    },
+    stats: {
+      runCount: 1,
+      instrument: 'Illumina MiSeq',
+      spots: 206_859,
+      bases: '124.5M',
+      downloadSize: '63.4 MB'
+    },
+    design: '2×300 bp paired-end',
+    submittedBy: 'Stockholm University',
+    study: 'Chronic trawling impact - Kattegat - benthic surface sediment - meiofauna Raw sequence reads',
+    projectAccessions: ['PRJNA1138962', 'SRP521534'],
+    sampleAccessions: ['SAMN42419523', 'SRS22079240'],
+    organism: 'marine metagenome',
+    library: {
+      name: 'P30454_110_S10',
+      instrument: 'Illumina MiSeq',
+      strategy: 'AMPLICON',
+      source: 'METAGENOMIC',
+      selection: 'PCR',
+      layout: 'PAIRED'
+    }
   }
 ];
 
