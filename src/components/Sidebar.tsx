@@ -20,11 +20,11 @@ const Sidebar = () => {
       disabled: !location.pathname.includes('/pipeline/')
     },
     {
-      path: '/results',
+      path: 'https://sih2025-blackpearl-report-dashboard.vercel.app/',
       icon: BarChart3,
       label: 'Results Dashboard',
       description: 'Biodiversity analysis results',
-      disabled: !location.pathname.includes('/results/')
+      // disabled: !location.pathname.includes('/results/')
     }
   ];
 

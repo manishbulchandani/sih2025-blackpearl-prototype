@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { motion } from 'framer-motion';
 import DatabaseBrowser from './pages/DatabaseBrowser';
 import PipelineExecution from './pages/PipelineExecution';
-import ResultsDashboard from './pages/ResultsDashboard';
 import Sidebar from './components/Sidebar';
 
 function App() {
@@ -20,7 +19,7 @@ function App() {
             <Route path="/" element={<Navigate to="/database" replace />} />
             <Route path="/database" element={<DatabaseBrowser />} />
             <Route path="/pipeline/:datasetId" element={<PipelineExecution />} />
-            <Route path="/results/:resultId" element={<ResultsDashboard />} />
+            {/* <Route path="/results/:resultId" element={<ResultsDashboard />} /> */}
           </Routes>
         </motion.main>
       </div>

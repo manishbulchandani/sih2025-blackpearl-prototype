@@ -177,21 +177,7 @@ const PipelineExecution = () => {
               {(isCompleted || (!isRunning && currentStepIndex === steps.length - 1 && steps.length > 0)) && (
                 <button
                   onClick={() => {
-                    localStorage.setItem('pipelineResults', JSON.stringify({
-                      datasetId,
-                      completedAt: new Date().toISOString(),
-                      steps: steps,
-                      dataset: currentDataset,
-                      results: {
-                        totalASVs: 11644,
-                        assignedTaxa: 8932,
-                        novelClusters: 47,
-                        shannonDiversity: 4.23,
-                        observedSpecies: 8932,
-                        completionTime: steps.reduce((sum, step) => sum + step.duration, 0)
-                      }
-                    }));
-                    navigate(`/results/${datasetId}`);
+                    window.open('https://sih2025-blackpearl-report-dashboard.vercel.app/', '_blank'); 
                   }}
                   className="bg-gradient-to-r from-green-500 to-blue-500 px-6 py-3 rounded-lg font-semibold hover:from-green-400 hover:to-blue-400 transition-all duration-300 flex items-center space-x-2 animate-pulse"
                 >
